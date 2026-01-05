@@ -1,1 +1,10 @@
+@font-face {
+  font-family: "hand";
+  src: url("/8.woff2");
+}
+
 @import "tailwindcss";
+
+.font-hand{
+  font-family: "hand";
+}

@@ -4,7 +4,9 @@ import Board from '../components/Board'
 const Home = () => {
   return (
     <div>
-        <Board/>
+        <Board player="black" />
+
+        <h1 className='font-hand text-black ' >hello</h1>
     </div>
   )
 }
