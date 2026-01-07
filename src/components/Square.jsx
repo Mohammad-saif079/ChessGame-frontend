@@ -2,9 +2,14 @@ import React from "react";
 
 const Square = ({ data }) => {
 
+    
+
+    const handleclick = () => { 
+        console.log("clicked",data.square)
+     }
    
     return (
-        <div
+        <div onClick={handleclick}
             className={`
         flex items-center justify-center
         w-[12.5%] aspect-square

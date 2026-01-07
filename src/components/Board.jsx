@@ -1,11 +1,19 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Square from "./Square";
 import Piece from "./Piece";
+import { Chess } from "chess.js";
 
 const Board = (props) => {
+
+    const chessRef = useRef(null);
+
+    if (!chessRef.current) {
+        chessRef.current = new Chess();
+    }
+
     const files = "abcdefgh";
 
-
+    const boardRef = useRef(null)
 
 
     const chesspieces = [
@@ -51,18 +59,25 @@ const Board = (props) => {
 
 
 
-    function createBoard() {
+    function createBoard(player = props.player) {
         return Array.from({ length: 64 }).map((_, index) => {
             const row = Math.floor(index / 8);
             const col = index % 8;
 
-            const square = files[col] + (8 - row);
-            const color = (row + col) % 2 === 1 ? "b" : "w";
+            const file =
+                player === "white"
+                    ? files[col]
+                    : files[7 - col];
+
+            const rank =
+                player === "white"
+                    ? 8 - row
+                    : row + 1;
 
             return {
                 id: index,
-                square,
-                color,
+                square: file + rank,
+                color: (row + col) % 2 === 1 ? "b" : "w",
                 piece: null,
                 isValid: false,
                 isCapture: false,
@@ -74,17 +89,20 @@ const Board = (props) => {
 
 
 
-    const [board, setBoard] = useState(createBoard)
+
+    const [board, setBoard] = useState(createBoard())
     const [pieces, setpieces] = useState(chesspieces)
-    
-   
+
+
 
     return (
-        <div className="w-[600px] h-[600px] relative flex flex-wrap">
+        <div ref={boardRef} className="w-[600px] h-[600px] relative flex flex-wrap">
             {board.map(square => (
                 <Square
                     key={square.id}
                     data={square}
+                    setboard={setBoard}
+                    chess = {chessRef}
 
                 />
             ))}
@@ -94,7 +112,9 @@ const Board = (props) => {
                     key={piece.id}
                     piece={piece}
                     player={props.player}
-
+                    boundsRef={boardRef}
+                    setboard={setBoard}
+                    chess = {chessRef}
                 />
             ))}
 
