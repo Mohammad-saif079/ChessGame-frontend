@@ -4,9 +4,7 @@ import Board from '../components/Board'
 const Home = () => {
   return (
     <div>
-        <Board player="white" />
-
-    
+        <Board lastMove={null} player="white" fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" />
     </div>
   )
 }
