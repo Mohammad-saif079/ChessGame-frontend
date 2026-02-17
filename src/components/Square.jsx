@@ -28,71 +28,136 @@ const Square = ({ data, setboard, setpiece, selected, chess, player, pieceRefs }
 
 
   const handleClick = () => {
-    if (selected.current) {
+    if (!selected.current) return;
 
-      const moves = chess.current.moves({
-        square: selected.current,
-        verbose: true,
-      });
-      const move = moves.find(m => m.to === data.square);
+    const from = selected.current;
+    const to = data.square;
 
-      if (!move) {
-        console.log("invalid move")
-        return
+    const moves = chess.current.moves({
+      square: from,
+      verbose: true,
+    });
+
+    const move = moves.find(m => m.to === to);
+    if (!move) return;
+
+    // 🔥 execute move
+    const executedMove = chess.current.move({
+      from,
+      to,
+      promotion: "q",
+    });
+
+    const movingEl = pieceRefs.current[from];
+    if (!movingEl) return;
+
+    const position = squareToPos(to);
+
+    // 🔥 Detect special cases
+    const isEnPassant = executedMove.flags.includes("e");
+    const isKingSideCastle = executedMove.flags.includes("k");
+    const isQueenSideCastle = executedMove.flags.includes("q");
+
+    let rookFrom = null;
+    let rookTo = null;
+
+    if (isKingSideCastle) {
+      rookFrom = executedMove.color === "w" ? "h1" : "h8";
+      rookTo = executedMove.color === "w" ? "f1" : "f8";
+    }
+
+    if (isQueenSideCastle) {
+      rookFrom = executedMove.color === "w" ? "a1" : "a8";
+      rookTo = executedMove.color === "w" ? "d1" : "d8";
+    }
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+
+        setpiece(prev => {
+
+          let next = prev;
+
+          // 🧨 EN PASSANT removal
+          if (isEnPassant) {
+            const file = to[0];
+            const rank = parseInt(to[1]);
+
+            const capturedSquare =
+              executedMove.color === "w"
+                ? `${file}${rank - 1}`
+                : `${file}${rank + 1}`;
+
+            next = next.filter(p => p.square !== capturedSquare);
+          }
+          else {
+            // normal capture
+            next = next.filter(p => p.square !== to);
+          }
+
+          // move piece
+          next = next.map(p =>
+            p.square === from
+              ? { ...p, square: to }
+              : p
+          );
+
+          // 🏰 update rook in state if castling
+          if (rookFrom && rookTo) {
+            next = next.map(p =>
+              p.square === rookFrom
+                ? { ...p, square: rookTo }
+                : p
+            );
+          }
+
+          return next;
+        });
+
+        // update board flags
+        setboard(prev =>
+          prev.map(sq => ({
+            ...sq,
+            isSelected: false,
+            isValid: false,
+            isCapture: false,
+            isLastFrom: sq.square === from,
+            isLastTo: sq.square === to,
+          }))
+        );
+
+        selected.current = null;
       }
+    });
 
-      chess.current.move({
-        from: selected.current,
-        to: data.square,
-        promotion: "q",
-      });
+    // ♟ animate moving piece
+    tl.to(movingEl, {
+      x: position.x,
+      y: position.y,
+      duration: 0.25,
+      ease: "power2.out",
+    });
 
-      const from = selected.current;
-      const to = data.square;
-
-
-      const pieceEl = pieceRefs.current[from];
-      if (!pieceEl) return;
-
-      const position = squareToPos(to)
-
-      gsap.to(pieceEl, {
-        x: position.x,
-        y: position.y,
-        duration: 0.25,
-        ease: "power2.out",
-        onComplete: () => {
-
-          // 1️⃣ update pieces
-          setpiece(prev =>
-            prev
-              .filter(p => p.square !== to) // capture
-              .map(p =>
-                p.square === from ? { ...p, square: to } : p
-              )
-          );
-
-          // 2️⃣ update board LAST-MOVE FLAGS
-          setboard(prev =>
-            prev.map(sq => ({
-              ...sq,
-              isValid: false,
-              isSelected: false,
-              isCapture: false,
-              isLastFrom: sq.square === from,
-              isLastTo: sq.square === to,
-            }))
-          );
-
-          // 3️⃣ clear selection (AFTER board update)
-          selected.current = null;
-        },
-      });
-
-      console.log(move)
-
+    // 🏰 animate rook if castling
+    if (rookFrom && rookTo) {
+      const rookEl = pieceRefs.current[rookFrom];
+      if (rookEl) {
+        const rookPos = squareToPos(rookTo);
+        tl.to(
+          rookEl,
+          {
+            x: rookPos.x,
+            y: rookPos.y,
+            duration: 0.25,
+            ease: "power2.out",
+          },
+          "<"
+        );
+      }
     }
   };
+
+
 
 
 

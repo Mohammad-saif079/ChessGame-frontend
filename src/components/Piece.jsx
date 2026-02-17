@@ -8,8 +8,24 @@ const BOARD_SIZE = 600;
 const SQUARE_SIZE = BOARD_SIZE / 8;
 const FILES = "abcdefgh";
 
-const Piece = ({ piece, setRef, selected, player, boundsRef, chess, setboard, setpiece, setselected }) => {
+const Piece = ({ piece, pieceRefs, setRef, selected, player, boundsRef, chess, setboard, setpiece, setselected }) => {
     const boxRef = useRef(null);
+    const squareToPos = (data) => {
+        const file = data[0];
+        const rank = Number(data[1]);
+
+        const x =
+            player === "white"
+                ? FILES.indexOf(file) * SQUARE_SIZE
+                : (7 - FILES.indexOf(file)) * SQUARE_SIZE;
+
+        const y =
+            player === "white"
+                ? (8 - rank) * SQUARE_SIZE
+                : (rank - 1) * SQUARE_SIZE;
+
+        return { x, y };
+    }
 
     // refs to avoid stale closures
     const squareRef = useRef(piece.square);
@@ -83,13 +99,87 @@ const Piece = ({ piece, setRef, selected, player, boundsRef, chess, setboard, se
 
                 // 🔴 ANOTHER PIECE CLICKED WHILE ONE IS SELECTED
                 if (selected.current && selected.current !== currentSquare) {
+                    const from = selected.current;
+                    const to = currentSquare;
 
+                    const moves = chess.current.moves({
+                        square: from,
+                        verbose: true,
+                    });
 
+                    const move = moves.find(m => m.to === to);
 
+                    if (!move) {
+                        console.log("invalid capture attempt");
+                        return;
+                    }
 
+                    const executedMove = chess.current.move({
+                        from,
+                        to,
+                        promotion: "q",
+                    });
 
-                    console.log("a move is defined");
-                    return; // do NOT disturb GSAP state
+                    const capturingEl = pieceRefs.current[from];
+                    if (!capturingEl) return;
+
+                    const position = squareToPos(to);
+
+                    gsap.to(capturingEl, {
+                        x: position.x,
+                        y: position.y,
+                        duration: 0.25,
+                        ease: "power2.out",
+                        onComplete: () => {
+
+                            setpiece(prev => {
+
+                                let next = prev;
+
+                                // 🧨 EN PASSANT
+                                if (executedMove.flags.includes("e")) {
+
+                                    const file = to[0];
+                                    const rank = Number(to[1]);
+
+                                    const capturedSquare =
+                                        executedMove.color === "w"
+                                            ? `${file}${rank - 1}`
+                                            : `${file}${rank + 1}`;
+
+                                    next = next.filter(p => p.square !== capturedSquare);
+                                }
+                                else {
+                                    // normal capture
+                                    next = next.filter(p => p.square !== to);
+                                }
+
+                                // move attacking piece
+                                next = next.map(p =>
+                                    p.square === from
+                                        ? { ...p, square: to }
+                                        : p
+                                );
+
+                                return next;
+                            });
+
+                            setboard(prev =>
+                                prev.map(sq => ({
+                                    ...sq,
+                                    isSelected: false,
+                                    isValid: false,
+                                    isCapture: false,
+                                    isLastFrom: sq.square === from,
+                                    isLastTo: sq.square === to,
+                                }))
+                            );
+
+                            selected.current = null;
+                        }
+                    });
+
+                    return;
                 }
 
                 // 🟦 FIRST SELECTION

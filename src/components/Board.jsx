@@ -168,7 +168,7 @@ const Board = (props) => {
                     setpiece={setpieces}
                     selected={selected}
                     setRef={el => (pieceRefs.current[piece.square] = el)}
-
+                    pieceRefs={pieceRefs}
                 />
             ))}
 
