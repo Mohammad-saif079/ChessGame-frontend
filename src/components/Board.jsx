@@ -2,15 +2,23 @@ import { useState, useEffect, useRef } from "react";
 import Square from "./Square";
 import Piece from "./Piece";
 import { Chess } from "chess.js";
+import { useGame } from "../context/GameContext";
+import gsap from "gsap";
 
 const Board = (props) => {
-    const [fen, setFen] = useState()
-
+  
+    const {remotemove, setremotemove} = useGame()
     const selected = useRef(null)
     const pieceRefs = useRef({});
 
 
+    useEffect(() => {
+        const piece = document.querySelector(".a8");
+        
 
+    }, [remotemove])
+    
+   
 
     const chessRef = useRef(null);
     const files = "abcdefgh";
@@ -142,7 +150,7 @@ const Board = (props) => {
     }, [props.fen]);
 
     return (
-        <div ref={boardRef} className="w-[600px] h-[600px] overflow-hidden  relative flex flex-wrap">
+        <div style={{width:props.size,height:props.size}} ref={boardRef} className={` overflow-hidden  relative flex flex-wrap`}>
             {board.map(square => (
                 <Square
                     key={square.id}

@@ -1,13 +1,10 @@
 import { useRef } from "react";
 import gsap from "gsap";
-
-const BOARD_SIZE = 600;
+const BOARD_SIZE = 500;
 const SQUARE_SIZE = BOARD_SIZE / 8;
 const FILES = "abcdefgh";
 
-
 const Square = ({ data, setboard, setpiece, selected, chess, player, pieceRefs }) => {
-
   const squareToPos = (data) => {
     const file = data[0];
     const rank = Number(data[1]);
@@ -78,7 +75,7 @@ const Square = ({ data, setboard, setpiece, selected, chess, player, pieceRefs }
 
           let next = prev;
 
-          // 🧨 EN PASSANT removal
+          //  EN PASSANT removal
           if (isEnPassant) {
             const file = to[0];
             const rank = parseInt(to[1]);
@@ -188,11 +185,11 @@ const Square = ({ data, setboard, setpiece, selected, chess, player, pieceRefs }
   }
   // ⬛ dark square
   else if (data.color === "b") {
-    bgColor = "bg-[#242733]";
+    bgColor = "bg-[#111827]";
   }
   // ⬜ light square
   else {
-    bgColor = "bg-[#343849]";
+    bgColor = "bg-[#1F2937]";
   }
 
   return (

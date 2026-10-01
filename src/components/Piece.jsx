@@ -4,12 +4,15 @@ import Draggable from "gsap/Draggable";
 
 gsap.registerPlugin(Draggable);
 
-const BOARD_SIZE = 600;
+
+const BOARD_SIZE = 500;
 const SQUARE_SIZE = BOARD_SIZE / 8;
 const FILES = "abcdefgh";
 
 const Piece = ({ piece, pieceRefs, setRef, selected, player, boundsRef, chess, setboard, setpiece, setselected }) => {
     const boxRef = useRef(null);
+
+
     const squareToPos = (data) => {
         const file = data[0];
         const rank = Number(data[1]);
@@ -64,6 +67,45 @@ const Piece = ({ piece, pieceRefs, setRef, selected, player, boundsRef, chess, s
         gsap.set(boxRef.current, initialPos);
     }, [initialPos]);
 
+    function applyCaptureState(from, to, executedMove) {
+        setpiece(prev => {
+            let next = prev;
+
+            // 🧨 EN PASSANT
+            if (executedMove.flags.includes("e")) {
+                const file = to[0];
+                const rank = Number(to[1]);
+                const capturedSquare =
+                    executedMove.color === "w"
+                        ? `${file}${rank - 1}`
+                        : `${file}${rank + 1}`;
+                next = next.filter(p => p.square !== capturedSquare);
+            } else {
+                next = next.filter(p => p.square !== to);
+            }
+
+            next = next.map(p =>
+                p.square === from ? { ...p, square: to } : p
+            );
+
+            return next;
+        });
+
+        setboard(prev =>
+            prev.map(sq => ({
+                ...sq,
+                isSelected: false,
+                isValid: false,
+                isCapture: false,
+                isLastFrom: sq.square === from,
+                isLastTo: sq.square === to,
+            }))
+        );
+
+        selected.current = null;
+    }
+
+
     // Draggable (created once)
     useEffect(() => {
         if (!boxRef.current || !boundsRef?.current) return;
@@ -76,24 +118,25 @@ const Piece = ({ piece, pieceRefs, setRef, selected, player, boundsRef, chess, s
             activeCursor: "grabbing",
 
             onPress() {
-                const currentSquare = squareRef.current;
+                console.log("PRESS:", {
+                    clickedSquare: squareRef.current,
+                    clickedColor: piece.color,
+                    selectedCurrent: selected.current,
+                    engineTurn: chess.current.turn(),
+                });
 
-                // ✅ ALWAYS save start position FIRST (prevents 0,0 bug)
+
+                const currentSquare = squareRef.current;
                 startPosRef.current = { x: this.x, y: this.y };
+
+                const turn = chess.current.turn(); // 'w' or 'b'
 
                 // 🔁 RE-CLICK SAME PIECE → TOGGLE OFF
                 if (selected.current === currentSquare) {
                     selected.current = null;
-
                     setboard(prev =>
-                        prev.map(sq => ({
-                            ...sq,
-                            isSelected: false,
-                            isValid: false,
-                            isCapture: false,
-                        }))
+                        prev.map(sq => ({ ...sq, isSelected: false, isValid: false, isCapture: false }))
                     );
-
                     return;
                 }
 
@@ -102,11 +145,35 @@ const Piece = ({ piece, pieceRefs, setRef, selected, player, boundsRef, chess, s
                     const from = selected.current;
                     const to = currentSquare;
 
-                    const moves = chess.current.moves({
-                        square: from,
-                        verbose: true,
-                    });
+                    const selectedPieceOnBoard = chess.current.get(from);
+                    const clickedPieceOnBoard = chess.current.get(to);
 
+                    // only proceed if the selected piece actually belongs to the side to move
+                    if (!selectedPieceOnBoard || selectedPieceOnBoard.color !== turn) {
+                        selected.current = null;
+                        return;
+                    }
+
+                    // 🟦 SAME COLOR AS SELECTED → SWITCH SELECTION
+                    if (clickedPieceOnBoard && clickedPieceOnBoard.color === selectedPieceOnBoard.color) {
+                        selected.current = currentSquare;
+                        const moves = chess.current.moves({ square: currentSquare, verbose: true });
+                        setboard(prev =>
+                            prev.map(sq => {
+                                const move = moves.find(m => m.to === sq.square);
+                                return {
+                                    ...sq,
+                                    isSelected: sq.square === currentSquare,
+                                    isValid: !!move,
+                                    isCapture: move ? move.flags.includes("c") || move.flags.includes("e") : false,
+                                };
+                            })
+                        );
+                        return;
+                    }
+
+                    // 🔴 ENEMY PIECE → ATTEMPT CAPTURE (always allowed to fall through here)
+                    const moves = chess.current.moves({ square: from, verbose: true });
                     const move = moves.find(m => m.to === to);
 
                     if (!move) {
@@ -114,14 +181,23 @@ const Piece = ({ piece, pieceRefs, setRef, selected, player, boundsRef, chess, s
                         return;
                     }
 
+                    // const executedMove = chess.current.move({ from, to, promotion: "q" });
+                    // ...rest of your existing capture animation/state code, unchanged
                     const executedMove = chess.current.move({
                         from,
                         to,
                         promotion: "q",
                     });
 
-                    const capturingEl = pieceRefs.current[from];
-                    if (!capturingEl) return;
+                    // ✅ don't trust pieceRefs alone — fall back to a direct DOM query
+                    const capturingEl =
+                        pieceRefs.current[from] || document.querySelector(`.${CSS.escape(from)}.pieces`);
+
+                    if (!capturingEl) {
+                        console.warn("capture animation skipped: no DOM element found for", from);
+                        applyCaptureState(from, to, executedMove);
+                        return;
+                    }
 
                     const position = squareToPos(to);
 
@@ -131,67 +207,16 @@ const Piece = ({ piece, pieceRefs, setRef, selected, player, boundsRef, chess, s
                         duration: 0.25,
                         ease: "power2.out",
                         onComplete: () => {
-
-                            setpiece(prev => {
-
-                                let next = prev;
-
-                                // 🧨 EN PASSANT
-                                if (executedMove.flags.includes("e")) {
-
-                                    const file = to[0];
-                                    const rank = Number(to[1]);
-
-                                    const capturedSquare =
-                                        executedMove.color === "w"
-                                            ? `${file}${rank - 1}`
-                                            : `${file}${rank + 1}`;
-
-                                    next = next.filter(p => p.square !== capturedSquare);
-                                }
-                                else {
-                                    // normal capture
-                                    next = next.filter(p => p.square !== to);
-                                }
-
-                                // move attacking piece
-                                next = next.map(p =>
-                                    p.square === from
-                                        ? { ...p, square: to }
-                                        : p
-                                );
-
-                                return next;
-                            });
-
-                            setboard(prev =>
-                                prev.map(sq => ({
-                                    ...sq,
-                                    isSelected: false,
-                                    isValid: false,
-                                    isCapture: false,
-                                    isLastFrom: sq.square === from,
-                                    isLastTo: sq.square === to,
-                                }))
-                            );
-
-                            selected.current = null;
-                        }
+                            applyCaptureState(from, to, executedMove);
+                        },
                     });
-
-                    return;
                 }
 
-                // 🟦 FIRST SELECTION
+                // 🟦 FIRST SELECTION — only allowed for the side to move
+                if (piece.color !== turn) return;
+
                 selected.current = currentSquare;
-
-                const moves = chess.current.moves({
-                    square: currentSquare,
-                    verbose: true,
-                });
-
-                console.log(moves)
-
+                const moves = chess.current.moves({ square: currentSquare, verbose: true });
                 setboard(prev =>
                     prev.map(sq => {
                         const move = moves.find(m => m.to === sq.square);
@@ -199,13 +224,13 @@ const Piece = ({ piece, pieceRefs, setRef, selected, player, boundsRef, chess, s
                             ...sq,
                             isSelected: sq.square === currentSquare,
                             isValid: !!move,
-                            isCapture: move
-                                ? move.flags.includes("c") || move.flags.includes("e")
-                                : false,
+                            isCapture: move ? move.flags.includes("c") || move.flags.includes("e") : false,
                         };
                     })
                 );
-            },
+            }
+
+            ,
 
 
 

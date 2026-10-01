@@ -1,0 +1,96 @@
+`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>GSoC Email</title>
+</head>
+
+<body style="margin:0; padding:0; background-color:#f5f5f5; font-family:Arial, sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f5f5; padding:20px;">
+    <tr>
+      <td align="center">
+
+        <!-- Card -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:8px; padding:20px;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="padding-bottom:10px;">
+            <a href="https://summerofcode.withgoogle.com" target="_blank">
+              <img  src= "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Google_Summer_of_Code_logo_%282021%29.svg/3840px-Google_Summer_of_Code_logo_%282021%29.svg.png" alt="GSoC Logo" style="width: 340px;">
+            </a>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td>
+              <hr style="border:none; border-top:1px solid #e0e0e0;">
+            </td>
+          </tr>
+
+          <!-- Content -->
+         <tr>
+            <td style="padding-top:20px; color:#444; font-size:15px; line-height:1.7;">
+
+              <p>
+                Welcome to Google Summer of Code 2024! We are pleased to have you join the GSoC community.
+              </p>
+
+              <p>
+                Your proposal 
+                <a href="#" style="color:#1a73e8; text-decoration:underline;">
+                  Improved Rendering with Tessellation Shaders
+                </a> 
+                has been accepted by Org Open Chemistry for GSoC 2024.
+              </p>
+
+              <p>
+                Please read the Accepted Contributor Information 
+                (<a href="#" style="color:#1a73e8; text-decoration:underline;">link to doc</a>). 
+                It contains important information you need to know about your participation in GSoC "2024". 
+                You will receive another detailed email with information about your GSoC stipend from Google Program Administrators in the next few days, please be sure to check your email.
+              </p>
+
+              <p>
+                If you have any questions please contact Google Program Administrators at 
+                <a href="mailto:gsoc-support@google.com" style="color:#1a73e8; text-decoration:underline;">
+                  gsoc-support@google.com
+                </a>
+              </p>
+
+              <p>
+                Have a wonderful summer!
+              </p>
+
+              <p style="margin-top:25px;">
+                - GSoC Team
+              </p>
+
+            </td>
+          </tr>
+
+
+        </table>
+
+        <!-- 👇 FOOTER OUTSIDE CARD -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="margin-top:15px;">
+          <tr>
+            <td style="font-size:12px; color:#777; text-align:center;">
+              You are receiving this email because of your participation in Google Summer of Code 2026.
+              <br><br>
+              <a href="https://summerofcode.withgoogle.com"
+                 style="color:#1a73e8; text-decoration:none;">
+                 summerofcode.withgoogle.com
+              </a>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>`
